@@ -1,0 +1,1 @@
+This custom component is a follow up to https://github.com/home-assistant/core/pull/38309 by @bahorn, which didn't make it to HA Core.
