@@ -76,12 +76,24 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass, entry):
     """Set up OpenRGB platform."""
-    autolog("<<<")
+
+    config = {}
+    for key, value in entry.data.items():
+        config[key] = value
+    for key, value in entry.options.items():
+        config[key] = value
+    if entry.options:
+        hass.config_entries.async_update_entry(entry, data=config, options={})
+
+    _LOGGER.info("Initializing OpenRGB entry (%s)", config)
+
+    undo_listener = entry.add_update_listener(_update_listener)
+
     try:
         orgb = OpenRGBClient(
-            entry.data[CONF_HOST],
-            entry.data[CONF_PORT],
-            name=entry.data[CONF_CLIENT_ID],
+            config[CONF_HOST],
+            config[CONF_PORT],
+            name=config[CONF_CLIENT_ID],
         )
     except ConnectionError as err:
         _LOGGER.error("Connection error during integration setup. Error: %s", err)
@@ -96,8 +108,8 @@ async def async_setup_entry(hass, entry):
         if not hass.data[DOMAIN]["online"]:
             _LOGGER.info(
                 "Connection reestablished to OpenRGB SDK Server at %s:%i",
-                entry.data[CONF_HOST],
-                entry.data[CONF_PORT],
+                config[CONF_HOST],
+                config[CONF_PORT],
             )
 
         hass.data[DOMAIN]["online"] = True
@@ -110,8 +122,8 @@ async def async_setup_entry(hass, entry):
             hass.data[DOMAIN][ORGB_DATA].comms.stop_connection()
             _LOGGER.info(
                 "Connection lost to OpenRGB SDK Server at %s:%i",
-                entry.data[CONF_HOST],
-                entry.data[CONF_PORT],
+                config[CONF_HOST],
+                config[CONF_PORT],
             )
 
         hass.data[DOMAIN]["online"] = False
@@ -125,12 +137,15 @@ async def async_setup_entry(hass, entry):
         ENTRY_IS_SETUP: set(),
         "entities": {},
         "pending": {},
+        "unlistener": undo_listener,
         "connection_failed": connection_failed,
         "connection_recovered": connection_recovered,
     }
 
     # Initial device load
     async def async_load_devices(device_list):
+        autolog("<<<")
+
         device_type_list = {}
 
         for device in device_list:
@@ -213,9 +228,16 @@ async def async_setup_entry(hass, entry):
 
     return True
 
+async def _update_listener(hass, config_entry):
+    """Update listener."""
+    await hass.config_entries.async_reload(config_entry.entry_id)
 
 async def async_unload_entry(hass, entry):
     """Unloading the OpenRGB platforms."""
+    autolog("<<<")
+
+    _LOGGER.info("Unloading OpenRGB")
+
     unload_ok = all(
         await asyncio.gather(
             *[
@@ -233,8 +255,11 @@ async def async_unload_entry(hass, entry):
         hass.data[DOMAIN][ORGB_TRACKER] = None
         hass.data[DOMAIN][ORGB_DATA].comms.stop_connection()
         hass.data[DOMAIN][ORGB_DATA] = None
+        hass.data[DOMAIN]["unlistener"]()
         hass.services.async_remove(DOMAIN, SERVICE_FORCE_UPDATE)
         hass.services.async_remove(DOMAIN, SERVICE_PULL_DEVICES)
         hass.data.pop(DOMAIN)
+
+    autolog(">>>")
 
     return unload_ok
