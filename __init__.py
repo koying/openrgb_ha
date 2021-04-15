@@ -10,6 +10,7 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_HOST, CONF_PORT
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
     DEFAULT_CLIENT_ID,
@@ -84,6 +85,10 @@ async def async_setup_entry(hass, entry):
         )
     except ConnectionError as err:
         _LOGGER.error("Connection error during integration setup. Error: %s", err)
+        raise ConfigEntryNotReady
+    except:
+        _LOGGER.debug("Connection error during integration setup.")
+        raise ConfigEntryNotReady
     autolog(">>>")
 
     def connection_recovered():
