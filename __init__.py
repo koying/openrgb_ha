@@ -45,6 +45,20 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
+def autolog(message):
+    "Automatically log the current function details."
+    import inspect
+    # Get the previous frame in the stack, otherwise it would
+    # be this function!!!
+    func = inspect.currentframe().f_back.f_code
+    # Dump the message + the name of this function to the log.
+    _LOGGER.debug("%s: %s in %s:%i" % (
+        message, 
+        func.co_name, 
+        func.co_filename, 
+        func.co_firstlineno
+    ))
+
 
 async def async_setup(hass, config):
     """Set up the OpenRGB integration."""
@@ -61,6 +75,7 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass, entry):
     """Set up OpenRGB platform."""
+    autolog("<<<")
     try:
         orgb = OpenRGBClient(
             entry.data[CONF_HOST],
@@ -69,9 +84,10 @@ async def async_setup_entry(hass, entry):
         )
     except ConnectionError as err:
         _LOGGER.error("Connection error during integration setup. Error: %s", err)
-        return False
+    autolog(">>>")
 
     def connection_recovered():
+        autolog("<<<")
         if not hass.data[DOMAIN]["online"]:
             _LOGGER.info(
                 "Connection reestablished to OpenRGB SDK Server at %s:%i",
@@ -81,8 +97,10 @@ async def async_setup_entry(hass, entry):
 
         hass.data[DOMAIN]["online"] = True
         async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
+        autolog(">>>")
 
     def connection_failed():
+        autolog("<<<")
         if hass.data[DOMAIN]["online"]:
             hass.data[DOMAIN][ORGB_DATA].comms.stop_connection()
             _LOGGER.info(
@@ -93,6 +111,7 @@ async def async_setup_entry(hass, entry):
 
         hass.data[DOMAIN]["online"] = False
         async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
+        autolog(">>>")
 
     hass.data[DOMAIN] = {
         "online": True,
@@ -134,11 +153,14 @@ async def async_setup_entry(hass, entry):
                 )
 
     def _get_updated_devices():
+        autolog("<<<")
         try:
             orgb.update()
         except ConnectionError:
+            autolog(">>>exception")
             hass.data[DOMAIN]["connection_failed"]()
             return None
+        autolog(">>>")
         return orgb.devices
 
     await async_load_devices(_get_updated_devices())
