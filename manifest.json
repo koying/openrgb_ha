@@ -4,6 +4,6 @@
     "version": "1.0",
     "config_flow": true,
     "documentation": "https://www.home-assistant.io/integrations/openrgb",
-    "requirements": ["openrgb-python==0.2.5"],
-    "codeowners": ["@bahorn"]
+    "requirements": ["openrgb-python==0.2.8"],
+    "codeowners": ["@bahorn", "@koying"]
 }
