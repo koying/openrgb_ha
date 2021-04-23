@@ -1,0 +1,6 @@
+{
+  "name": "OpenRGB",
+  "domains": ["light"],
+  "iot_class": ["Assumed State", "Local Polling"],
+  "render_readme": true
+}
