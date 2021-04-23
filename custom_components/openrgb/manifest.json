@@ -3,7 +3,8 @@
     "name": "OpenRGB",
     "version": "1.0",
     "config_flow": true,
-    "documentation": "https://www.home-assistant.io/integrations/openrgb",
+    "documentation": "https://github.com/koying/openrgb_ha",
+    "issue_tracker": "https://github.com/koying/openrgb_ha/issues",
     "requirements": ["openrgb-python==0.2.8"],
     "codeowners": ["@bahorn", "@koying"]
 }
