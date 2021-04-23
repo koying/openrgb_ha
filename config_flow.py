@@ -23,7 +23,7 @@ def _try_connect(_host, _port, _client_id):
     try:
         conn = OpenRGBClient(_host, _port, name=_client_id)
         conn.comms.stop_connection()
-    except (ConnectionError, socket.gaierror) as exc:
+    except OSError as exc:
         raise CannotConnect from exc
 
     return True
@@ -126,6 +126,11 @@ class OpenRGBOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_user(self, user_input=None):
         self._errors = {}
 
+        if user_input is not None:
+            self._host = str(user_input[CONF_HOST])
+            self._port = user_input[CONF_PORT]
+            self._client_id = user_input[CONF_CLIENT_ID]
+
         data_schema = {
             vol.Required(CONF_HOST, default=self._host): str,
             vol.Required(CONF_PORT, default=self._port): int,
@@ -133,10 +138,6 @@ class OpenRGBOptionsFlowHandler(config_entries.OptionsFlow):
         }
 
         if user_input is not None:
-            self._host = str(user_input[CONF_HOST])
-            self._port = user_input[CONF_PORT]
-            self._client_id = user_input[CONF_CLIENT_ID]
-
             try:
                 await asyncio.wait_for(
                     self.hass.async_add_executor_job(_try_connect, self._host, self._port, self._client_id),
@@ -153,6 +154,7 @@ class OpenRGBOptionsFlowHandler(config_entries.OptionsFlow):
                 )
 
             except (asyncio.TimeoutError, CannotConnect):
+                _LOGGER.error("cannot connect")
                 result = RESULT_CONN_ERROR
 
             self._errors["base"] = result

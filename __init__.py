@@ -85,7 +85,7 @@ async def async_setup_entry(hass, entry):
     if entry.options:
         hass.config_entries.async_update_entry(entry, data=config, options={})
 
-    _LOGGER.info("Initializing OpenRGB entry (%s)", config)
+    _LOGGER.debug("Initializing OpenRGB entry (%s)", config)
 
     undo_listener = entry.add_update_listener(_update_listener)
 
@@ -102,6 +102,8 @@ async def async_setup_entry(hass, entry):
         _LOGGER.debug("Connection error during integration setup.")
         raise ConfigEntryNotReady
     autolog(">>>")
+
+    _LOGGER.info("Initialized OpenRGB entry (%s)", config)
 
     def connection_recovered():
         autolog("<<<")
@@ -176,7 +178,7 @@ async def async_setup_entry(hass, entry):
         autolog("<<<")
         try:
             orgb.update()
-        except ConnectionError:
+        except OSError:
             autolog(">>>exception")
             hass.data[DOMAIN]["connection_failed"]()
             return None
@@ -191,8 +193,9 @@ async def async_setup_entry(hass, entry):
             try:
                 hass.data[DOMAIN][ORGB_DATA].comms.start_connection()
                 hass.data[DOMAIN]["connection_recovered"]()
-            except ConnectionError:
+            except OSError:
                 hass.data[DOMAIN]["connection_failed"]()
+                return
 
         device_list = await hass.async_add_executor_job(_get_updated_devices)
 
