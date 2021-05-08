@@ -19,7 +19,7 @@
 ### Home Assistant
 
 1. Go to the integrations page
-1. Click on the éAdd Integration" button at the bottom-right
+1. Click on the "Add Integration" button at the bottom-right
 1. Search for the "OpenRGB" integration
 1. Select the OpenRGB integration
 
