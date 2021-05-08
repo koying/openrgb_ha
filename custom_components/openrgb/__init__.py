@@ -176,14 +176,18 @@ async def async_setup_entry(hass, entry):
 
     def _get_updated_devices():
         autolog("<<<")
-        try:
-            orgb.update()
-        except OSError:
-            autolog(">>>exception")
+        if hass.data[DOMAIN]["online"]:
+            try:
+                orgb.update()
+                return orgb.devices
+            except OSError:
+                autolog(">>>exception")
+                hass.data[DOMAIN]["connection_failed"]()
+                return None
+        else:
             hass.data[DOMAIN]["connection_failed"]()
             return None
         autolog(">>>")
-        return orgb.devices
 
     await async_load_devices(_get_updated_devices())
 
