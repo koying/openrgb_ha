@@ -121,7 +121,7 @@ async def async_setup_entry(hass, entry):
     def connection_failed():
         autolog("<<<")
         if hass.data[DOMAIN]["online"]:
-            hass.data[DOMAIN][ORGB_DATA].comms.stop_connection()
+            hass.data[DOMAIN][ORGB_DATA].disconnect()
             _LOGGER.info(
                 "Connection lost to OpenRGB SDK Server at %s:%i",
                 config[CONF_HOST],
@@ -191,7 +191,7 @@ async def async_setup_entry(hass, entry):
         if not hass.data[DOMAIN]["online"]:
             # try to reconnect
             try:
-                hass.data[DOMAIN][ORGB_DATA].comms.start_connection()
+                hass.data[DOMAIN][ORGB_DATA].connect()
                 hass.data[DOMAIN]["connection_recovered"]()
             except OSError:
                 hass.data[DOMAIN]["connection_failed"]()
@@ -256,7 +256,7 @@ async def async_unload_entry(hass, entry):
         hass.data[DOMAIN][ENTRY_IS_SETUP] = set()
         hass.data[DOMAIN][ORGB_TRACKER]()
         hass.data[DOMAIN][ORGB_TRACKER] = None
-        hass.data[DOMAIN][ORGB_DATA].comms.stop_connection()
+        hass.data[DOMAIN][ORGB_DATA].disconnect()
         hass.data[DOMAIN][ORGB_DATA] = None
         hass.data[DOMAIN]["unlistener"]()
         hass.services.async_remove(DOMAIN, SERVICE_FORCE_UPDATE)
