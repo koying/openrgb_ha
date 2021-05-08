@@ -1,0 +1,47 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Интеграция уже создана ранее",
+            "conn_error": "Ошибка подключения к OpenRGB серверу"
+        },
+        "error": {
+            "cannot_connect": "Ошибка подключения",
+            "unknown": "Неизвестная ошибка"
+        },
+        "flow_title": "Настройка OpenRGB",
+        "step": {
+            "user": {
+                "data": {
+                    "client_id": "Client ID",
+                    "host": "Хост",
+                    "port": "Порт"
+                },
+                "description": "Укажите параметры подключения к OpenRGB серверу",
+                "title": "OpenRGB"
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "Интеграция уже создана ранее",
+            "conn_error": "Ошибка подключения к OpenRGB серверу"
+        },
+        "error": {
+            "cannot_connect": "Ошибка подключения",
+            "unknown": "Неизвестная ошибка"
+        },
+        "flow_title": "Настройка OpenRGB",
+        "step": {
+            "user": {
+                "data": {
+                    "client_id": "Client ID",
+                    "host": "Хост",
+                    "port": "Порт"
+                },
+                "description": "Укажите параметры подключения к OpenRGB серверу",
+                "title": "OpenRGB"
+            }
+        }
+    },
+    "title": "OpenRGB"
+}
