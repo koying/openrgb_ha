@@ -122,7 +122,7 @@ async def async_setup_entry(hass, entry):
         autolog("<<<")
         if hass.data[DOMAIN]["online"]:
             hass.data[DOMAIN][ORGB_DATA].disconnect()
-            _LOGGER.info(
+            _LOGGER.warn(
                 "Connection lost to OpenRGB SDK Server at %s:%i",
                 config[CONF_HOST],
                 config[CONF_PORT],
@@ -174,6 +174,8 @@ async def async_setup_entry(hass, entry):
                     hass, ORGB_DISCOVERY_NEW.format("light"), device_list
                 )
 
+        autolog(">>>")
+
     def _get_updated_devices():
         autolog("<<<")
         if hass.data[DOMAIN]["online"]:
@@ -186,12 +188,16 @@ async def async_setup_entry(hass, entry):
                 return None
         else:
             hass.data[DOMAIN]["connection_failed"]()
+            autolog(">>>")
             return None
-        autolog(">>>")
 
-    await async_load_devices(_get_updated_devices())
+    device_list = await hass.async_add_executor_job(_get_updated_devices)
+    if device_list is not None:
+        await async_load_devices(device_list)
 
     async def async_poll_devices_update(event_time):
+        autolog("<<<")
+
         if not hass.data[DOMAIN]["online"]:
             # try to reconnect
             try:
@@ -202,7 +208,6 @@ async def async_setup_entry(hass, entry):
                 return
 
         device_list = await hass.async_add_executor_job(_get_updated_devices)
-
         if device_list is None:
             return
 
@@ -218,6 +223,9 @@ async def async_setup_entry(hass, entry):
                 hass.data[DOMAIN]["entities"].pop(dev_id)
             else:
                 async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, dev_id)
+
+        autolog(">>>")
+
 
     hass.data[DOMAIN][ORGB_TRACKER] = async_track_time_interval(
         hass, async_poll_devices_update, TRACK_INTERVAL
