@@ -16,6 +16,8 @@ from homeassistant.components.light import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.entity import DeviceInfo
+
 import homeassistant.util.color as color_util
 
 from .const import (
@@ -59,21 +61,24 @@ def _setup_entities(hass, dev_ids):
         if dev_id is None:
             continue
         # check if this already exists
-        entity_id = orgb_entity_id(dev_id)
-        if hass.data[DOMAIN]["entities"].get(entity_id, None):
-            continue
-        entities.append(OpenRGBLight(dev_id))
-    return entities
+        light_unique_id = dev_id.metadata.serial
 
+        for led in dev_id.leds:
+            if hass.data[DOMAIN]["entities"].get(f"{light_unique_id}_{led.id}", None):
+                continue
+            entities.append(OpenRGBLight(dev_id, led.id))
+    return entities
 
 class OpenRGBLight(LightEntity):
     """Representation of a OpenRGB Device."""
 
-    def __init__(self, light):
+    def __init__(self, light, led_id):
         """Initialize an OpenRGB light."""
         self._light = light
         self._callbacks = []
-        self._name = None
+        self._name = light.leds[led_id].name
+        self._led_id = led_id
+        self._attr_unique_id = f"{light.metadata.serial}_{led_id}"
 
         self._brightness = 100.0
         self._prev_brightness = 100.0
@@ -89,12 +94,8 @@ class OpenRGBLight(LightEntity):
         self._state = True
         self._assumed_state = True
 
-        self.entity_id = orgb_entity_id(self._light)
-
     async def async_added_to_hass(self):
         """Call when entity is added to hass."""
-        dev_id = self.entity_id
-        self.hass.data[DOMAIN]["entities"][dev_id] = dev_id
         self._callbacks.append(
             async_dispatcher_connect(
                 self.hass, SIGNAL_DELETE_ENTITY, self._delete_callback
@@ -117,11 +118,19 @@ class OpenRGBLight(LightEntity):
     def object_id(self):
         """Return the OpenRGB id."""
         return orgb_object_id(self._light)
-
+    
     @property
-    def unique_id(self):
-        """Give each Device a unique ID."""
-        return f"openrgb.{self.object_id}"
+    def device_info(self):
+        return {
+            "identifiers": {
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, self._light.metadata.serial)
+            },
+            "name": self.name,
+            "manufacturer": self._light.metadata.vendor,
+            "model": self._light.metadata.description,
+            "sw_version": self._light.metadata.version,
+        }
 
     @property
     def icon(self):
@@ -173,6 +182,11 @@ class OpenRGBLight(LightEntity):
         """Return the supported features for this device."""
         return SUPPORT_EFFECT | SUPPORT_COLOR | SUPPORT_BRIGHTNESS
 
+    @property
+    def led_id(self):
+        """Return the id of the assigned led."""
+        return self._led_id
+
     # Public interfaces to control the device
 
     def turn_on(self, **kwargs):
@@ -213,7 +227,7 @@ class OpenRGBLight(LightEntity):
     def update(self):
         """Single function to update the devices state."""
         self._name = self._light.name
-        self._hs_value = color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[0]))
+        self._hs_value = color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[self._led_id]))
         self._effect = self._light.modes[self._light.active_mode].name
         self._effects = list(map(lambda x: x.name, self._light.modes))
 
@@ -240,7 +254,7 @@ class OpenRGBLight(LightEntity):
             *(self._hs_value), 100.0 * (self._brightness / 255.0)
         )
         try:
-            self._light.set_color(RGBUtils.RGBColor(*color))
+            self._light.leds[self._led_id].set_color(RGBUtils.RGBColor(*color))
             self._assumed_state = False
         except ConnectionError:
             self.hass.data[DOMAIN]["connection_failed"]()
@@ -253,8 +267,8 @@ class OpenRGBLight(LightEntity):
             entity_registry = (
                 await self.hass.helpers.entity_registry.async_get_registry()
             )
-            if entity_registry.async_is_registered(self.entity_id):
-                entity_registry.async_remove(self.entity_id)
+            if entity_registry.async_is_registered(self._attr_unique_id):
+                entity_registry.async_remove(self._attr_unique_id)
             else:
                 await self.async_remove()
 
