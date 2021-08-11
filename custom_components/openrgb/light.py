@@ -16,7 +16,6 @@ from homeassistant.components.light import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import DeviceInfo
 
 import homeassistant.util.color as color_util
 
@@ -60,25 +59,27 @@ def _setup_entities(hass, dev_ids):
     for dev_id in dev_ids:
         if dev_id is None:
             continue
+        
         # check if this already exists
         light_unique_id = dev_id.metadata.serial
 
         for led in dev_id.leds:
-            if hass.data[DOMAIN]["entities"].get(f"{light_unique_id}_{led.id}", None):
+            full_id = f"{light_unique_id}_led_{led.id}"
+            if hass.data[DOMAIN]["entities"].get(full_id, None):
                 continue
-            entities.append(OpenRGBLight(dev_id, led.id))
+            entities.append(OpenRGBLight(dev_id, led.id, full_id))
     return entities
 
 class OpenRGBLight(LightEntity):
     """Representation of a OpenRGB Device."""
 
-    def __init__(self, light, led_id):
+    def __init__(self, light, led_id, unique_id):
         """Initialize an OpenRGB light."""
         self._light = light
         self._callbacks = []
         self._name = light.leds[led_id].name
         self._led_id = led_id
-        self._attr_unique_id = f"{light.metadata.serial}_{led_id}"
+        self._attr_unique_id = unique_id
 
         self._brightness = 100.0
         self._prev_brightness = 100.0
@@ -96,6 +97,11 @@ class OpenRGBLight(LightEntity):
 
     async def async_added_to_hass(self):
         """Call when entity is added to hass."""
+
+        self.hass.data[DOMAIN]["entities"][self._attr_unique_id] = self._attr_unique_id
+        entity_id = orgb_entity_id(self._light)
+        if self._attr_unique_id not in self.hass.data[DOMAIN]["devices"][entity_id]:
+            self.hass.data[DOMAIN]["devices"][entity_id].append(self._attr_unique_id)
         self._callbacks.append(
             async_dispatcher_connect(
                 self.hass, SIGNAL_DELETE_ENTITY, self._delete_callback

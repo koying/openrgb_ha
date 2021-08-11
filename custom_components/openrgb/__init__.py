@@ -8,7 +8,6 @@ import voluptuous as vol
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import CONF_CLIENT_ID, CONF_HOST, CONF_PORT
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -86,8 +85,6 @@ async def async_setup_entry(hass, entry):
     if entry.options:
         hass.config_entries.async_update_entry(entry, data=config, options={})
 
-    device_registry = dr.async_get(hass)
-
     _LOGGER.debug("Initializing OpenRGB entry (%s)", config)
 
     undo_listener = entry.add_update_listener(_update_listener)
@@ -142,6 +139,7 @@ async def async_setup_entry(hass, entry):
         ENTRY_IS_SETUP: set(),
         "entities": {},
         "pending": {},
+        "devices": {},
         "unlistener": undo_listener,
         "connection_failed": connection_failed,
         "connection_recovered": connection_recovered,
@@ -160,8 +158,15 @@ async def async_setup_entry(hass, entry):
             device_type_list[ha_type].append(device)
 
             entity_id = orgb_entity_id(device)
-            if entity_id not in hass.data[DOMAIN]["entities"]:
-                hass.data[DOMAIN]["entities"][entity_id] = None
+            if entity_id not in hass.data[DOMAIN]["devices"]:
+                hass.data[DOMAIN]["devices"][entity_id] = []
+
+            light_unique_id = device.metadata.serial
+            
+            for led in device.leds:
+                full_id = f"{light_unique_id}_led_{led.id}"
+                if full_id not in hass.data[DOMAIN]["entities"]:
+                    hass.data[DOMAIN]["entities"][full_id] = None
 
         for ha_type, dev_ids in device_type_list.items():
             config_entries_key = f"{ha_type}.openrgb"
@@ -219,13 +224,16 @@ async def async_setup_entry(hass, entry):
         newlist_ids = []
         for device in device_list:
             newlist_ids.append(orgb_entity_id(device))
-        for dev_id in list(hass.data[DOMAIN]["entities"]):
+        for dev_id in list(hass.data[DOMAIN]["devices"]):
             # Clean up stale devices, or alert them that new info is available.
             if dev_id not in newlist_ids:
-                async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, dev_id)
-                hass.data[DOMAIN]["entities"].pop(dev_id)
+                for led_id in hass.data[DOMAIN]["devices"][dev_id]:
+                    async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, led_id)
+
+                hass.data[DOMAIN]["devices"].pop(dev_id)
             else:
-                async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, dev_id)
+                for led_id in hass.data[DOMAIN]["devices"][dev_id]:
+                    async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, led_id)
 
         autolog(">>>")
 
