@@ -16,7 +16,6 @@ from homeassistant.components.light import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-
 import homeassistant.util.color as color_util
 
 from .const import (
@@ -59,7 +58,6 @@ def _setup_entities(hass, dev_ids):
     for dev_id in dev_ids:
         if dev_id is None:
             continue
-        
         # check if this already exists
         light_unique_id = dev_id.metadata.serial
 
