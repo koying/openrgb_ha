@@ -158,15 +158,23 @@ async def async_setup_entry(hass, entry):
             device_type_list[ha_type].append(device)
 
             entity_id = orgb_entity_id(device)
+            device_unique_id = device.metadata.serial
+            # Some devices don't have a serial defined, so fall back to OpenRGB id
+            if not device_unique_id:
+                device_unique_id = entity_id
+
             if entity_id not in hass.data[DOMAIN]["devices"]:
                 hass.data[DOMAIN]["devices"][entity_id] = []
-
-            light_unique_id = device.metadata.serial
             
+            # Stores the entire device as an entity
+            if device_unique_id not in hass.data[DOMAIN]["entities"]:
+                hass.data[DOMAIN]["entities"][device_unique_id] = None
+            
+            # Stores each LED of the device as an entity
             for led in device.leds:
-                full_id = f"{light_unique_id}_led_{led.id}"
-                if full_id not in hass.data[DOMAIN]["entities"]:
-                    hass.data[DOMAIN]["entities"][full_id] = None
+                led_unique_id = f"{device_unique_id}_led_{led.id}"
+                if led_unique_id not in hass.data[DOMAIN]["entities"]:
+                    hass.data[DOMAIN]["entities"][led_unique_id] = None
 
         for ha_type, dev_ids in device_type_list.items():
             config_entries_key = f"{ha_type}.openrgb"
@@ -227,11 +235,15 @@ async def async_setup_entry(hass, entry):
         for dev_id in list(hass.data[DOMAIN]["devices"]):
             # Clean up stale devices, or alert them that new info is available.
             if dev_id not in newlist_ids:
+                async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, dev_id)
+                
                 for led_id in hass.data[DOMAIN]["devices"][dev_id]:
                     async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, led_id)
 
                 hass.data[DOMAIN]["devices"].pop(dev_id)
             else:
+                async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, dev_id)
+                
                 for led_id in hass.data[DOMAIN]["devices"][dev_id]:
                     async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, led_id)
 
