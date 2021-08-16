@@ -289,7 +289,7 @@ class OpenRGBDevice(OpenRGBLight):
         self._prev_effect = self._effect
 
     def _retrieve_current_name(self) -> str:
-        return self._light.name
+        return f"{self._light.name} {self._light.device_id}"
 
     def _retrieve_active_color(self) -> tuple[float, float]:
         return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[0]))
@@ -370,7 +370,7 @@ class OpenRGBLed(OpenRGBLight):
         return SUPPORT_COLOR | SUPPORT_BRIGHTNESS
 
     def _retrieve_current_name(self) -> str:
-        return f"{self._light.name} {self._light.leds[self._led_id].name}"
+        return f"{self._light.name} {self._light.device_id} {self._light.leds[self._led_id].name}"
 
     def _retrieve_active_color(self) -> tuple[float, float]:
         return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[self._led_id]))
