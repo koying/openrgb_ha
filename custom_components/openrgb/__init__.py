@@ -13,6 +13,8 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
+    CONF_ADD_LEDS,
+    DEFAULT_ADD_LEDS,
     DEFAULT_CLIENT_ID,
     DEFAULT_PORT,
     DOMAIN,
@@ -39,6 +41,7 @@ CONFIG_SCHEMA = vol.Schema(
                     vol.Required(CONF_HOST): cv.string,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
                     vol.Optional(CONF_CLIENT_ID, default=DEFAULT_CLIENT_ID): cv.string,
+                    vol.Optional(CONF_ADD_LEDS, default=DEFAULT_ADD_LEDS): cv.boolean,
                 }
             )
         },
@@ -170,11 +173,12 @@ async def async_setup_entry(hass, entry):
             if device_unique_id not in hass.data[DOMAIN]["entities"]:
                 hass.data[DOMAIN]["entities"][device_unique_id] = None
             
-            # Stores each LED of the device as an entity
-            for led in device.leds:
-                led_unique_id = f"{device_unique_id}_led_{led.id}"
-                if led_unique_id not in hass.data[DOMAIN]["entities"]:
-                    hass.data[DOMAIN]["entities"][led_unique_id] = None
+            if CONF_ADD_LEDS in config and config[CONF_ADD_LEDS]:
+                # Stores each LED of the device as an entity
+                for led in device.leds:
+                    led_unique_id = f"{device_unique_id}_led_{led.id}"
+                    if led_unique_id not in hass.data[DOMAIN]["entities"]:
+                        hass.data[DOMAIN]["entities"][led_unique_id] = None
 
         for ha_type, dev_ids in device_type_list.items():
             config_entries_key = f"{ha_type}.openrgb"

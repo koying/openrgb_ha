@@ -14,7 +14,8 @@
                 "data": {
                     "client_id": "Client ID",
                     "host": "Host",
-                    "port": "Port"
+                    "port": "Port",
+                    "add_leds": "Add individual leds"
                 },
                 "description": "Configure the connection details.",
                 "title": "OpenRGB"
@@ -36,7 +37,8 @@
                 "data": {
                     "client_id": "Client ID",
                     "host": "Host",
-                    "port": "Port"
+                    "port": "Port",
+                    "add_leds": "Add individual leds"
                 },
                 "description": "Configure the connection details.",
                 "title": "OpenRGB"

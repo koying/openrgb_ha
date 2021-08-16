@@ -10,7 +10,7 @@ from homeassistant import config_entries, exceptions
 from homeassistant.const import CONF_CLIENT_ID, CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 
-from .const import CONN_TIMEOUT, DEFAULT_CLIENT_ID, DEFAULT_PORT, DOMAIN
+from .const import CONF_ADD_LEDS, CONN_TIMEOUT, DEFAULT_ADD_LEDS, DEFAULT_CLIENT_ID, DEFAULT_PORT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class OpenRGBFlowHandler(config_entries.ConfigFlow):
         self._host = None
         self._port = DEFAULT_PORT
         self._client_id = DEFAULT_CLIENT_ID
+        self._add_leds = DEFAULT_ADD_LEDS
         self._is_import = False
 
     async def async_step_import(self, user_input=None):
@@ -65,12 +66,14 @@ class OpenRGBFlowHandler(config_entries.ConfigFlow):
             vol.Required(CONF_HOST, default=self._host): str,
             vol.Required(CONF_PORT, default=self._port): int,
             vol.Required(CONF_CLIENT_ID, default=self._client_id): str,
+            vol.Required(CONF_ADD_LEDS, default=self._add_leds): bool,
         }
 
         if user_input is not None:
             self._host = str(user_input[CONF_HOST])
             self._port = user_input[CONF_PORT]
             self._client_id = user_input[CONF_CLIENT_ID]
+            self._add_leds = user_input[CONF_ADD_LEDS]
 
             try:
                 await asyncio.wait_for(
@@ -87,6 +90,7 @@ class OpenRGBFlowHandler(config_entries.ConfigFlow):
                         CONF_HOST: self._host,
                         CONF_PORT: self._port,
                         CONF_CLIENT_ID: self._client_id,
+                        CONF_ADD_LEDS: self._add_leds,
                     },
                 )
 
@@ -118,6 +122,7 @@ class OpenRGBOptionsFlowHandler(config_entries.OptionsFlow):
         self._host = config_entry.data[CONF_HOST] if CONF_HOST in config_entry.data else None
         self._port = config_entry.data[CONF_PORT] if CONF_PORT in config_entry.data else DEFAULT_PORT
         self._client_id = config_entry.data[CONF_CLIENT_ID] if CONF_CLIENT_ID in config_entry.data else DEFAULT_CLIENT_ID
+        self._add_leds = config_entry.data[CONF_ADD_LEDS] if CONF_ADD_LEDS in config_entry.data else DEFAULT_ADD_LEDS
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
@@ -130,11 +135,13 @@ class OpenRGBOptionsFlowHandler(config_entries.OptionsFlow):
             self._host = str(user_input[CONF_HOST])
             self._port = user_input[CONF_PORT]
             self._client_id = user_input[CONF_CLIENT_ID]
+            self._add_leds = user_input[CONF_ADD_LEDS]
 
         data_schema = {
             vol.Required(CONF_HOST, default=self._host): str,
             vol.Required(CONF_PORT, default=self._port): int,
             vol.Required(CONF_CLIENT_ID, default=self._client_id): str,
+            vol.Required(CONF_ADD_LEDS, default=self._add_leds): bool,
         }
 
         if user_input is not None:
@@ -150,6 +157,7 @@ class OpenRGBOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_HOST: self._host,
                         CONF_PORT: self._port,
                         CONF_CLIENT_ID: self._client_id,
+                        CONF_ADD_LEDS: self._add_leds,
                     },
                 )
 
