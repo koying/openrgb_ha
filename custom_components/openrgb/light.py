@@ -19,6 +19,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 import homeassistant.util.color as color_util
 
 from .const import (
+    CONF_ADD_LEDS,
     DOMAIN,
     ORGB_DISCOVERY_NEW,
     SIGNAL_DELETE_ENTITY,
@@ -40,6 +41,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             _setup_entities,
             hass,
             dev_ids,
+            config_entry.data[CONF_ADD_LEDS] if CONF_ADD_LEDS in config_entry.data else False,
         )
         async_add_entities(entities, True)
 
@@ -51,7 +53,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     await async_discover_sensor(device_ids)
 
 
-def _setup_entities(hass, dev_ids):
+def _setup_entities(hass, dev_ids, add_leds):
     """Set up OpenRGB Light device."""
     entities = []
     for dev_id in dev_ids:
@@ -67,10 +69,11 @@ def _setup_entities(hass, dev_ids):
         if not hass.data[DOMAIN]["entities"].get(device_unique_id, None):
             entities.append(OpenRGBDevice(dev_id, device_unique_id))
 
-        for led in dev_id.leds:
-            led_unique_id = f"{device_unique_id}_led_{led.id}"
-            if not hass.data[DOMAIN]["entities"].get(led_unique_id, None):
-                entities.append(OpenRGBLed(dev_id, led.id, led_unique_id))
+        if add_leds:
+            for led in dev_id.leds:
+                led_unique_id = f"{device_unique_id}_led_{led.id}"
+                if not hass.data[DOMAIN]["entities"].get(led_unique_id, None):
+                    entities.append(OpenRGBLed(dev_id, led.id, led_unique_id))
     return entities
 
 class OpenRGBLight(LightEntity):
@@ -289,7 +292,7 @@ class OpenRGBDevice(OpenRGBLight):
         self._prev_effect = self._effect
 
     def _retrieve_current_name(self) -> str:
-        return self._light.name
+        return f"{self._light.name} {self._light.device_id}"
 
     def _retrieve_active_color(self) -> tuple[float, float]:
         return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[0]))
@@ -321,8 +324,6 @@ class OpenRGBDevice(OpenRGBLight):
 
 class OpenRGBLed(OpenRGBLight):
     """Representation of a LED from an OpenRGB Device."""
-
-    _attr_entity_registry_enabled_default = False
 
     def __init__(self, light, led_id, unique_id):
         """Initialize an OpenRGB light."""
@@ -370,7 +371,7 @@ class OpenRGBLed(OpenRGBLight):
         return SUPPORT_COLOR | SUPPORT_BRIGHTNESS
 
     def _retrieve_current_name(self) -> str:
-        return f"{self._light.name} {self._light.leds[self._led_id].name}"
+        return f"{self._light.name} {self._light.device_id} {self._light.leds[self._led_id].name}"
 
     def _retrieve_active_color(self) -> tuple[float, float]:
         return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[self._led_id]))
