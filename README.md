@@ -1,5 +1,15 @@
 # OpenRGB integration for Home Assistant
 
+## Changelog
+
+### 2.0
+
+- Add support for individual LED control (thanks @FeikoJoosten)
+
+### 1.0
+
+- Initial release
+
 ## Pre-requistes
 
 1. OpenRGB installed
