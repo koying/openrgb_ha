@@ -32,7 +32,7 @@ def _try_connect(_host, _port, _client_id):
 class OpenRGBFlowHandler(config_entries.ConfigFlow):
     """Config flow for OpenRGB component."""
 
-    VERSION = 1
+    VERSION = 2
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     @staticmethod
@@ -57,9 +57,6 @@ class OpenRGBFlowHandler(config_entries.ConfigFlow):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-
         self._errors = {}
 
         data_schema = {
@@ -81,7 +78,7 @@ class OpenRGBFlowHandler(config_entries.ConfigFlow):
                     timeout=CONN_TIMEOUT,
                 )
 
-                await self.async_set_unique_id(DOMAIN)
+                await self.async_set_unique_id(f'{DOMAIN}_{self._host}_{self._port}')
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(

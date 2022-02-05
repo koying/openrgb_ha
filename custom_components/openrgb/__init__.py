@@ -5,7 +5,7 @@ import logging
 from openrgb import OpenRGBClient
 import voluptuous as vol
 
-from homeassistant.config_entries import SOURCE_IMPORT
+from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import CONF_CLIENT_ID, CONF_HOST, CONF_PORT
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -63,6 +63,21 @@ def autolog(message):
         func.co_firstlineno
     ))
 
+async def async_migrate_entry(hass, config_entry: ConfigEntry):
+    """Migrate old entry."""
+    _LOGGER.debug("Migrating from version %s", config_entry.version)
+
+    if config_entry.version == 1:
+
+        new = {**config_entry.data}
+
+        config_entry.version = 2
+        config_entry.unique_id = f'{DOMAIN}_{config_entry.data[CONF_HOST]}_{config_entry.data[CONF_PORT]}'
+        hass.config_entries.async_update_entry(config_entry, data=new)
+
+        _LOGGER.info("Migration to version %s successful", config_entry.version)
+
+    return True
 
 async def async_setup(hass, config):
     """Set up the OpenRGB integration."""
