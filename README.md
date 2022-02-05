@@ -2,6 +2,10 @@
 
 ## Changelog
 
+### 2.1
+
+- Allow multiple instancec (fixes #11)
+
 ### 2.0
 
 - Add support for individual LED control (thanks @FeikoJoosten)
