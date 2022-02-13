@@ -3,6 +3,8 @@
 from datetime import timedelta
 
 DOMAIN = "openrgb"
+CONFIG_VERSION = 2
+
 ORGB_DATA = "openrgb_data"
 ORGB_TRACKER = "openrgb_tracker"
 ORGB_DISCOVERY_NEW = "openrgb_discovery_new_{}"

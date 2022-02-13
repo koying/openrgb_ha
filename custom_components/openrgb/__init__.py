@@ -14,6 +14,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
     CONF_ADD_LEDS,
+    CONFIG_VERSION,
     DEFAULT_ADD_LEDS,
     DEFAULT_CLIENT_ID,
     DEFAULT_PORT,
@@ -67,15 +68,17 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
     """Migrate old entry."""
     _LOGGER.debug("Migrating from version %s", config_entry.version)
 
-    if config_entry.version == 1:
-
+    update = False
         new = {**config_entry.data}
 
-        config_entry.version = 2
+    if config_entry.version == 1:
         config_entry.unique_id = f'{DOMAIN}_{config_entry.data[CONF_HOST]}_{config_entry.data[CONF_PORT]}'
-        hass.config_entries.async_update_entry(config_entry, data=new)
+        update = True
 
-        _LOGGER.info("Migration to version %s successful", config_entry.version)
+    if update:
+        _LOGGER.info("Migration from version %s to %s successful", config_entry.version, CONFIG_VERSION)
+        config_entry.version = CONFIG_VERSION
+        hass.config_entries.async_update_entry(config_entry, data=new)
 
     return True
 

@@ -10,7 +10,7 @@ from homeassistant import config_entries, exceptions
 from homeassistant.const import CONF_CLIENT_ID, CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 
-from .const import CONF_ADD_LEDS, CONN_TIMEOUT, DEFAULT_ADD_LEDS, DEFAULT_CLIENT_ID, DEFAULT_PORT, DOMAIN
+from .const import CONF_ADD_LEDS, CONFIG_VERSION, CONN_TIMEOUT, DEFAULT_ADD_LEDS, DEFAULT_CLIENT_ID, DEFAULT_PORT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def _try_connect(_host, _port, _client_id):
 class OpenRGBFlowHandler(config_entries.ConfigFlow):
     """Config flow for OpenRGB component."""
 
-    VERSION = 2
+    VERSION = CONFIG_VERSION
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     @staticmethod
