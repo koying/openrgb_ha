@@ -82,7 +82,7 @@ class OpenRGBFlowHandler(config_entries.ConfigFlow):
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(
-                    title=DOMAIN,
+                    title=self._host,
                     data={
                         CONF_HOST: self._host,
                         CONF_PORT: self._port,
