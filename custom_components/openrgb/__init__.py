@@ -69,7 +69,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
     _LOGGER.debug("Migrating from version %s", config_entry.version)
 
     update = False
-        new = {**config_entry.data}
+    new = {**config_entry.data}
 
     if config_entry.version == 1:
         config_entry.unique_id = f'{DOMAIN}_{config_entry.data[CONF_HOST]}_{config_entry.data[CONF_PORT]}'
@@ -128,32 +128,34 @@ async def async_setup_entry(hass, entry):
 
     def connection_recovered():
         autolog("<<<")
-        if not hass.data[DOMAIN]["online"]:
+        if not hass.data[DOMAIN][entry.entry_id]["online"]:
             _LOGGER.info(
                 "Connection reestablished to OpenRGB SDK Server at %s:%i",
                 config[CONF_HOST],
                 config[CONF_PORT],
             )
 
-        hass.data[DOMAIN]["online"] = True
+        hass.data[DOMAIN][entry.entry_id]["online"] = True
         async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
         autolog(">>>")
 
     def connection_failed():
         autolog("<<<")
-        if hass.data[DOMAIN]["online"]:
-            hass.data[DOMAIN][ORGB_DATA].disconnect()
+        if hass.data[DOMAIN][entry.entry_id]["online"]:
+            hass.data[DOMAIN][entry.entry_id][ORGB_DATA].disconnect()
             _LOGGER.warn(
                 "Connection lost to OpenRGB SDK Server at %s:%i",
                 config[CONF_HOST],
                 config[CONF_PORT],
             )
 
-        hass.data[DOMAIN]["online"] = False
+        hass.data[DOMAIN][entry.entry_id]["online"] = False
         async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
         autolog(">>>")
 
-    hass.data[DOMAIN] = {
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = {
+        "ha_dev_unique_id": f'{DOMAIN}_{entry.data[CONF_HOST]}_{entry.data[CONF_PORT]}',
         "online": True,
         ORGB_DATA: orgb,
         ORGB_TRACKER: None,
@@ -184,65 +186,67 @@ async def async_setup_entry(hass, entry):
             if not device_unique_id:
                 device_unique_id = entity_id
 
-            if entity_id not in hass.data[DOMAIN]["devices"]:
-                hass.data[DOMAIN]["devices"][entity_id] = []
+            if entity_id not in hass.data[DOMAIN][entry.entry_id]["devices"]:
+                hass.data[DOMAIN][entry.entry_id]["devices"][entity_id] = []
             
             # Stores the entire device as an entity
-            if device_unique_id not in hass.data[DOMAIN]["entities"]:
-                hass.data[DOMAIN]["entities"][device_unique_id] = None
+            if device_unique_id not in hass.data[DOMAIN][entry.entry_id]["entities"]:
+                hass.data[DOMAIN][entry.entry_id]["entities"][device_unique_id] = None
             
             if CONF_ADD_LEDS in config and config[CONF_ADD_LEDS]:
                 # Stores each LED of the device as an entity
                 for led in device.leds:
                     led_unique_id = f"{device_unique_id}_led_{led.id}"
-                    if led_unique_id not in hass.data[DOMAIN]["entities"]:
-                        hass.data[DOMAIN]["entities"][led_unique_id] = None
+                    if led_unique_id not in hass.data[DOMAIN][entry.entry_id]["entities"]:
+                        hass.data[DOMAIN][entry.entry_id]["entities"][led_unique_id] = None
 
         for ha_type, dev_ids in device_type_list.items():
             config_entries_key = f"{ha_type}.openrgb"
 
-            if config_entries_key not in hass.data[DOMAIN][ENTRY_IS_SETUP]:
-                hass.data[DOMAIN]["pending"][ha_type] = dev_ids
+            if config_entries_key not in hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP]:
+                hass.data[DOMAIN][entry.entry_id]["pending"][ha_type] = dev_ids
                 hass.async_create_task(
                     hass.config_entries.async_forward_entry_setup(entry, "light")
                 )
-                hass.data[DOMAIN][ENTRY_IS_SETUP].add(config_entries_key)
+                hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP].add(config_entries_key)
             else:
                 async_dispatcher_send(
-                    hass, ORGB_DISCOVERY_NEW.format("light"), device_list
+                    hass, ORGB_DISCOVERY_NEW.format("light"), entry.entry_id, device_list
                 )
 
         autolog(">>>")
 
     def _get_updated_devices():
         autolog("<<<")
-        if hass.data[DOMAIN]["online"]:
+        if hass.data[DOMAIN][entry.entry_id]["online"]:
             try:
                 orgb.update()
                 return orgb.devices
             except OSError:
                 autolog(">>>exception")
-                hass.data[DOMAIN]["connection_failed"]()
+                hass.data[DOMAIN][entry.entry_id]["connection_failed"]()
                 return None
         else:
-            hass.data[DOMAIN]["connection_failed"]()
+            hass.data[DOMAIN][entry.entry_id]["connection_failed"]()
             autolog(">>>")
             return None
 
     device_list = await hass.async_add_executor_job(_get_updated_devices)
+    _LOGGER.debug("hass device list: %s", device_list)
     if device_list is not None:
         await async_load_devices(device_list)
 
     async def async_poll_devices_update(event_time):
         autolog("<<<")
+        _LOGGER.debug("hass data: %s", hass.data[DOMAIN])
 
-        if not hass.data[DOMAIN]["online"]:
+        if not hass.data[DOMAIN][entry.entry_id]["online"]:
             # try to reconnect
             try:
-                hass.data[DOMAIN][ORGB_DATA].connect()
-                hass.data[DOMAIN]["connection_recovered"]()
+                hass.data[DOMAIN][entry.entry_id][ORGB_DATA].connect()
+                hass.data[DOMAIN][entry.entry_id]["connection_recovered"]()
             except OSError:
-                hass.data[DOMAIN]["connection_failed"]()
+                hass.data[DOMAIN][entry.entry_id]["connection_failed"]()
                 return
 
         device_list = await hass.async_add_executor_job(_get_updated_devices)
@@ -251,28 +255,30 @@ async def async_setup_entry(hass, entry):
 
         await async_load_devices(device_list)
 
+        _LOGGER.debug("hass data newlist: %s", device_list)
+
         newlist_ids = []
         for device in device_list:
             newlist_ids.append(orgb_entity_id(device))
-        for dev_id in list(hass.data[DOMAIN]["devices"]):
+        for dev_id in list(hass.data[DOMAIN][entry.entry_id]["devices"]):
             # Clean up stale devices, or alert them that new info is available.
             if dev_id not in newlist_ids:
                 async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, dev_id)
                 
-                for led_id in hass.data[DOMAIN]["devices"][dev_id]:
+                for led_id in hass.data[DOMAIN][entry.entry_id]["devices"][dev_id]:
                     async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, led_id)
 
-                hass.data[DOMAIN]["devices"].pop(dev_id)
+                hass.data[DOMAIN][entry.entry_id]["devices"].pop(dev_id)
             else:
                 async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, dev_id)
                 
-                for led_id in hass.data[DOMAIN]["devices"][dev_id]:
+                for led_id in hass.data[DOMAIN][entry.entry_id]["devices"][dev_id]:
                     async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, led_id)
 
         autolog(">>>")
 
 
-    hass.data[DOMAIN][ORGB_TRACKER] = async_track_time_interval(
+    hass.data[DOMAIN][entry.entry_id][ORGB_TRACKER] = async_track_time_interval(
         hass, async_poll_devices_update, TRACK_INTERVAL
     )
 
@@ -304,21 +310,21 @@ async def async_unload_entry(hass, entry):
                 hass.config_entries.async_forward_entry_unload(
                     entry, component.split(".", 1)[0]
                 )
-                for component in hass.data[DOMAIN][ENTRY_IS_SETUP]
+                for component in hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP]
             ]
         )
     )
 
     if unload_ok:
-        hass.data[DOMAIN][ENTRY_IS_SETUP] = set()
-        hass.data[DOMAIN][ORGB_TRACKER]()
-        hass.data[DOMAIN][ORGB_TRACKER] = None
-        hass.data[DOMAIN][ORGB_DATA].disconnect()
-        hass.data[DOMAIN][ORGB_DATA] = None
-        hass.data[DOMAIN]["unlistener"]()
+        hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP] = set()
+        hass.data[DOMAIN][entry.entry_id][ORGB_TRACKER]()
+        hass.data[DOMAIN][entry.entry_id][ORGB_TRACKER] = None
+        hass.data[DOMAIN][entry.entry_id][ORGB_DATA].disconnect()
+        hass.data[DOMAIN][entry.entry_id][ORGB_DATA] = None
+        hass.data[DOMAIN][entry.entry_id]["unlistener"]()
         hass.services.async_remove(DOMAIN, SERVICE_FORCE_UPDATE)
         hass.services.async_remove(DOMAIN, SERVICE_PULL_DEVICES)
-        hass.data.pop(DOMAIN)
+        hass.data[DOMAIN].pop(entry.entry_id)
 
     autolog(">>>")
 
