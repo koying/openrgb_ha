@@ -2,9 +2,13 @@
 
 ## Changelog
 
+### 2.2 [Breaking]
+
+- Fix multiple instances
+
 ### 2.1
 
-- Allow multiple instancec (fixes #11)
+- Allow multiple instances (fixes #11)
 
 ### 2.0
 
