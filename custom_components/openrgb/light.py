@@ -251,8 +251,8 @@ class OpenRGBDevice(OpenRGBLight):
         self._attr_unique_id = f'{ha_dev_unique_id}_{unique_id}'
         self._name = self._retrieve_current_name()
 
-        self._brightness = 100.0
-        self._prev_brightness = 100.0
+        self._brightness = 255.0
+        self._prev_brightness = 255.0
 
         self._hs_value = (0.0, 0.0)
         self._prev_hs_value = (0.0, 0.0)
@@ -350,8 +350,8 @@ class OpenRGBLed(OpenRGBLight):
         self._name = self._retrieve_current_name()
         _LOGGER.debug ("led name: %s", self._name)
 
-        self._brightness = 100.0
-        self._prev_brightness = 100.0
+        self._brightness = 255.0
+        self._prev_brightness = 255.0
 
         self._hs_value = (0.0, 0.0)
         self._prev_hs_value = (0.0, 0.0)
