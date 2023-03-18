@@ -175,6 +175,10 @@ class OpenRGBLight(LightEntity):
 
     def turn_off(self, **kwargs):
         """Turn the device off."""
+        # prevent subsequent turn_off calls from erasing the previous state
+        if not self.is_on:
+            return
+            
         # preserve the state
         self._prev_brightness = self._brightness
         self._prev_hs_value = self._hs_value
