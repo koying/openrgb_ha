@@ -1,0 +1,49 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "O serviço já está configurado",
+            "conn_error": "Incapaz de conectar."
+        },
+        "error": {
+            "cannot_connect": "Incapaz de conectar",
+            "unknown": "Erro desconhecido"
+        },
+        "flow_title": "Configuração OpenRGB",
+        "step": {
+            "user": {
+                "data": {
+                    "client_id": "ID do Cliente",
+                    "host": "Host",
+                    "port": "Porta",
+                    "add_leds": "Adicionar leds individuais"
+                },
+                "description": "Configurar os detalhes da conexão.",
+                "title": "OpenRGB"
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "O serviço já está configurado",
+            "conn_error": "Incapaz de conectar."
+        },
+        "error": {
+            "cannot_connect": "Incapaz de conectar",
+            "unknown": "Erro desconhecido"
+        },
+        "flow_title": "Configuração OpenRGB",
+        "step": {
+            "user": {
+                "data": {
+                    "client_id": "ID do Cliente",
+                    "host": "Host",
+                    "port": "Porta",
+                    "add_leds": "Adicionar leds individuais"
+                },
+                "description": "Configurar os detalhes da conexão.",
+                "title": "OpenRGB"
+            }
+        }
+    },
+    "title": "OpenRGB"
+}
