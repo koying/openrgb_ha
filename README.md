@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 2.3
+
+- Add Brazilian language (thanks @LeandroIssa)
+- Fix brightness (thanks @ThanhCN0)
+
 ### 2.2 [Breaking]
 
 - Fix multiple instances

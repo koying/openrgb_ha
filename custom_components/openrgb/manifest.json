@@ -1,7 +1,7 @@
 {
     "domain": "openrgb",
     "name": "OpenRGB",
-    "version": "2.2",
+    "version": "2.3",
     "config_flow": true,
     "documentation": "https://github.com/koying/openrgb_ha",
     "issue_tracker": "https://github.com/koying/openrgb_ha/issues",
