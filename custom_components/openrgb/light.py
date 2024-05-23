@@ -15,6 +15,7 @@ from homeassistant.components.light import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers import entity_registry as er
 import homeassistant.util.color as color_util
 
 from .const import (
@@ -237,7 +238,7 @@ class OpenRGBLight(LightEntity):
         """Remove this entity."""
         if dev_id == self.entity_id:
             entity_registry = (
-                await self.hass.helpers.entity_registry.async_get(self.hass)
+                er.async_get(self.hass)
             )
             if entity_registry.async_is_registered(self._attr_unique_id):
                 entity_registry.async_remove(self._attr_unique_id)
