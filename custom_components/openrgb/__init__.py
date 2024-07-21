@@ -327,3 +327,7 @@ async def async_unload_entry(hass, entry):
     autolog(">>>")
 
     return unload_ok
+
+async def async_remove_config_entry_device(hass, config_entry, device_entry):
+    """Remove a config entry from a device."""
+    return True
