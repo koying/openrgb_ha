@@ -205,9 +205,7 @@ async def async_setup_entry(hass, entry):
 
             if config_entries_key not in hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP]:
                 hass.data[DOMAIN][entry.entry_id]["pending"][ha_type] = dev_ids
-                hass.async_create_task(
-                    hass.config_entries.async_forward_entry_setup(entry, "light")
-                )
+                await hass.config_entries.async_forward_entry_setups(entry, ["light"])
                 hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP].add(config_entries_key)
             else:
                 async_dispatcher_send(
