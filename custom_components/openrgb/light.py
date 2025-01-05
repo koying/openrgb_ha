@@ -9,13 +9,13 @@ from homeassistant.components.light import (
     ATTR_EFFECT,
     ATTR_HS_COLOR,
     DOMAIN as SENSOR_DOMAIN,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
-    SUPPORT_EFFECT,
+    ColorMode,
+    LightEntityFeature,
     LightEntity,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers import entity_registry as er
 import homeassistant.util.color as color_util
 
 from .const import (
@@ -142,6 +142,16 @@ class OpenRGBLight(LightEntity):
     def brightness(self):
         """Return the brightness of this light between 0..255."""
         return self._brightness
+    
+    @property
+    def color_mode(self):
+        """Return the color mode of the light."""
+        return ColorMode.HS
+    
+    @property
+    def supported_color_modes(self):
+        """Return a set of supported color modes."""
+        return {ColorMode.HS}
 
     @property
     def hs_color(self):
@@ -228,7 +238,7 @@ class OpenRGBLight(LightEntity):
         """Remove this entity."""
         if dev_id == self.entity_id:
             entity_registry = (
-                await self.hass.helpers.entity_registry.async_get_registry()
+                er.async_get(self.hass)
             )
             if entity_registry.async_is_registered(self._attr_unique_id):
                 entity_registry.async_remove(self._attr_unique_id)
@@ -292,7 +302,7 @@ class OpenRGBDevice(OpenRGBLight):
     @property
     def supported_features(self):
         """Return the supported features for this device."""
-        return SUPPORT_EFFECT | SUPPORT_COLOR | SUPPORT_BRIGHTNESS
+        return LightEntityFeature.EFFECT
 
     def _device_turned_on(self, **kwargs):
         if ATTR_EFFECT in kwargs:
@@ -382,7 +392,7 @@ class OpenRGBLed(OpenRGBLight):
     @property
     def supported_features(self):
         """Return the supported features for this device."""
-        return SUPPORT_COLOR | SUPPORT_BRIGHTNESS
+        return LightEntityFeature(0)
 
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id} LED {self._led_id}"

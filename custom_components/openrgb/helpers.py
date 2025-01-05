@@ -2,6 +2,7 @@
 from openrgb.utils import DeviceType
 
 from homeassistant.components.light import ENTITY_ID_FORMAT
+from homeassistant.util import slugify
 
 
 def orgb_tuple(color):
@@ -11,7 +12,7 @@ def orgb_tuple(color):
 
 def orgb_object_id(instance):
     """Return the ORGB Devices object id."""
-    return f"{instance.name} {instance.device_id}".replace(" ", "_").lower()
+    return slugify(f"{instance.name} {instance.device_id}")
 
 
 def orgb_entity_id(instance):
