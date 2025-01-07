@@ -333,7 +333,7 @@ class OpenRGBDevice(OpenRGBLight):
         super().update()
 
         self._effect = self._light.modes[self._light.active_mode].name
-        self._effects = list(map(lambda x: x.name, self._light.modes))
+        self._effects = [mode.name for mode in self._light.modes if mode.name != EFFECT_OFF]
 
         # Set light state to off if the effect is off
         if self._effect == EFFECT_OFF:
