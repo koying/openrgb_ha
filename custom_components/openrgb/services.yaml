@@ -2,19 +2,19 @@
 
 pull_devices:
   name: Pull devices
-  description: Pull device list from OpenRGB server.
+  description: Pulls device list from OpenRGB server.
 
 force_update:
   name: Force update
-  description: Force all OpenRGB devices to pull data.
+  description: Forces all OpenRGB devices to pull data.
 
 load_profile:
   name: Load profile
-  description: Load profile in OpenRGB server
+  description: Load a profile on OpenRGB server.
   fields:
     profile:
       name: Profile
-      description: The name of the profile to load in the OpenRGB server
+      description: The name of the profile to load.
       required: true
       selector:
         text:
