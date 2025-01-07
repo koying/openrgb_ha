@@ -3,9 +3,9 @@
     "name": "OpenRGB",
     "version": "2.4",
     "config_flow": true,
-    "documentation": "https://github.com/Bluscream/openrgb_ha",
-    "issue_tracker": "https://github.com/Bluscream/openrgb_ha/issues",
+    "documentation": "https://github.com/koying/openrgb_ha",
+    "issue_tracker": "https://github.com/koying/openrgb_ha/issues",
     "requirements": ["openrgb-python==0.3.1"],
-    "codeowners": ["@bahorn", "@koying", "@ThanhCN0", "@Bluscream"],
+    "codeowners": ["@koying"],
     "iot_class": "local_polling"
 }
