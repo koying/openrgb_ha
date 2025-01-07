@@ -221,6 +221,10 @@ class OpenRGBLight(LightEntity):
             if self._hs_value != (0.0, 0.0):
                 self._assumed_state = False
 
+        # If the brightness is 0, the light is off
+        if self._brightness == 0.0:
+            self._state = False
+
     def _set_color(self):
         """Set the devices color using the library."""
         raise NotImplementedError
@@ -335,7 +339,7 @@ class OpenRGBDevice(OpenRGBLight):
         self._effect = self._light.modes[self._light.active_mode].name
         self._effects = [mode.name for mode in self._light.modes if mode.name != EFFECT_OFF]
 
-        # Set light state to off if the effect is off
+        # If the effect is Off, the light is off
         if self._effect == EFFECT_OFF:
             self._state = False
 
