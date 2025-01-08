@@ -2,6 +2,10 @@
 
 ## Changelog
 
+### 2.4
+
+- Fixes (thanks @Bluscream/@ThanhCN0)
+
 ### 2.3
 
 - Add Brazilian language (thanks @LeandroIssa)

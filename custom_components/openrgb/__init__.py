@@ -8,7 +8,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import CONF_CLIENT_ID, CONF_HOST, CONF_PORT
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.dispatcher import async_dispatcher_send, dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.exceptions import ConfigEntryNotReady
 
@@ -205,9 +205,7 @@ async def async_setup_entry(hass, entry):
 
             if config_entries_key not in hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP]:
                 hass.data[DOMAIN][entry.entry_id]["pending"][ha_type] = dev_ids
-                hass.async_create_task(
-                    hass.config_entries.async_forward_entry_setup(entry, "light")
-                )
+                await hass.config_entries.async_forward_entry_setups(entry, ["light"])
                 hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP].add(config_entries_key)
             else:
                 hass.loop.call_soon_threadsafe(
@@ -334,3 +332,7 @@ async def async_unload_entry(hass, entry):
     autolog(">>>")
 
     return unload_ok
+
+async def async_remove_config_entry_device(hass, config_entry, device_entry):
+    """Remove a config entry from a device."""
+    return True
