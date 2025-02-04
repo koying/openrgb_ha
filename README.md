@@ -1,68 +1,36 @@
 # OpenRGB integration for Home Assistant
 
-## Changelog
+## Pre-requisites
 
-### 2.4
-
-- Fixes (thanks @Bluscream/@ThanhCN0)
-
-### 2.3
-
-- Add Brazilian language (thanks @LeandroIssa)
-- Fix brightness (thanks @ThanhCN0)
-
-### 2.2 [Breaking]
-
-- Fix multiple instances
-
-### 2.1
-
-- Allow multiple instances (fixes #11)
-
-### 2.0
-
-- Add support for individual LED control (thanks @FeikoJoosten)
-
-### 1.0
-
-- Initial release
-
-## Pre-requistes
-
-1. OpenRGB installed
-1. Its "SDK Server" component enabled
+1. OpenRGB installed.
+1. Its _SDK Server_ component enabled.
 
 ## Installation
 
-### HACS
+The easiest install is via [HACS](https://hacs.xyz):
 
-1. Launch HACS
-1. Navigate to the Integrations section
-1. "+ Explore & Add Repositories" button in the bottom-right
-1. Search for "OpenRGB"
-1. Select "Install this repository"
-1. Restart Home Assistant
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=openrgb-ha&repository=openrgb-ha&category=integration)
 
-### Home Assistant
+1. Click the button above, and install this integration via HACS.
+1. Restart Home Assistant.
 
-1. Go to the integrations page
-1. Click on the "Add Integration" button at the bottom-right
-1. Search for the "OpenRGB" integration
-1. Select the OpenRGB integration
+Then click the button below to configure the integration in your Home Assistant instance:
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=openrgb)
 
 ## Configuration
 
 ### Options
 
-This integration can only be configuration through the UI (Configuration->Integrations), and the options below can be configured when the integration is added.
+This integration can only be configuration through the UI (_Configuration_ -> _Devices & services_), and the options below can be configured when the integration is added.
 
 | key       | default        | required | description                                     |
 | --------- | -------------- | -------- | ----------------------------------------------- |
-| host      | localhost      | yes      | The host where OpenRGB is running               |
+| host      | localhost      | yes      | The host or IP where OpenRGB is running         |
 | port      | 6742           | yes      | The port on which the Server SDK is listening   |
-| client_id | Home Assistant | no       | the Client ID that will be displayed in OpenRGB |
+| client_id | Home Assistant | no       | The Client ID that will be displayed in OpenRGB |
 
 ## Credits
 
-- This custom component is a follow-up to https://github.com/home-assistant/core/pull/38309 by @bahorn, which didn't make it to HA Core.  
-- This integration uses openrgb-python, by @jath03
+- This custom component is a follow-up to https://github.com/home-assistant/core/pull/38309 by @bahorn, which didn't make it to HA Core.
+- This integration uses [openrgb-python](https://github.com/jath03/openrgb-python), by @jath03.
