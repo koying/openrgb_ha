@@ -4,6 +4,8 @@
 
 1. OpenRGB installed.
 1. Its _SDK Server_ component enabled.
+1. No firewall blocking the connection between Home Assistant and OpenRGB.
+   1. For example, make sure your Ethernet or Wi-Fi network connection is set as _Private_ in Windows.
 
 ## Installation
 
