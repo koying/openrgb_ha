@@ -13,6 +13,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
+    ATTR_PROFILE,
     CONF_ADD_LEDS,
     CONFIG_VERSION,
     DEFAULT_ADD_LEDS,
@@ -25,6 +26,7 @@ from .const import (
     ORGB_TRACKER,
     SERVICE_FORCE_UPDATE,
     SERVICE_PULL_DEVICES,
+    SERVICE_LOAD_PROFILE,
     SIGNAL_DELETE_ENTITY,
     SIGNAL_UPDATE_ENTITY,
     TRACK_INTERVAL,
@@ -290,6 +292,23 @@ async def async_setup_entry(hass, entry):
 
     hass.services.async_register(DOMAIN, SERVICE_FORCE_UPDATE, async_force_update)
 
+    async def async_load_profile(call):
+        """Load profile in OpenRGB server."""
+        hass.data[DOMAIN][entry.entry_id][ORGB_DATA].load_profile(call.data[ATTR_PROFILE])
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOAD_PROFILE,
+        async_load_profile,
+        schema=vol.Schema(
+            vol.All(
+                {
+                    vol.Required(ATTR_PROFILE): cv.string,
+                }
+            )
+        ),
+    )
+
     return True
 
 async def _update_listener(hass, config_entry):
@@ -322,6 +341,7 @@ async def async_unload_entry(hass, entry):
         hass.data[DOMAIN][entry.entry_id]["unlistener"]()
         hass.services.async_remove(DOMAIN, SERVICE_FORCE_UPDATE)
         hass.services.async_remove(DOMAIN, SERVICE_PULL_DEVICES)
+        hass.services.async_remove(DOMAIN, SERVICE_LOAD_PROFILE)
         hass.data[DOMAIN].pop(entry.entry_id)
 
     autolog(">>>")
