@@ -1,0 +1,11 @@
+{
+    "domain": "openrgb",
+    "name": "OpenRGB",
+    "version": "2.5",
+    "config_flow": true,
+    "documentation": "https://github.com/openrgb-ha/openrgb-ha",
+    "issue_tracker": "https://github.com/openrgb-ha/openrgb-ha/issues",
+    "requirements": ["openrgb-python==0.3.3"],
+    "codeowners": ["@koying", "@felipecrs"],
+    "iot_class": "local_polling"
+}
