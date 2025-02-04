@@ -1,7 +1,20 @@
 # Describes the format for available OpenRGB services
 
 pull_devices:
-  description: Pull device list from OpenRGB server.
+  name: Pull devices
+  description: Pulls device list from OpenRGB server.
 
 force_update:
-  description: Force all OpenRGB devices to pull data.
+  name: Force update
+  description: Forces all OpenRGB devices to pull data.
+
+load_profile:
+  name: Load profile
+  description: Load a profile on OpenRGB server.
+  fields:
+    profile:
+      name: Profile
+      description: The name of the profile to load.
+      required: true
+      selector:
+        text:
