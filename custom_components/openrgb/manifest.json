@@ -1,7 +1,7 @@
 {
     "domain": "openrgb",
     "name": "OpenRGB",
-    "version": "2.5",
+    "version": "2.6.0",
     "config_flow": true,
     "documentation": "https://github.com/openrgb-ha/openrgb-ha",
     "issue_tracker": "https://github.com/openrgb-ha/openrgb-ha/issues",
