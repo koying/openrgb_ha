@@ -138,7 +138,7 @@ async def async_setup_entry(hass, entry):
             )
 
         hass.data[DOMAIN][entry.entry_id]["online"] = True
-        hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_UPDATE_ENTITY)
+        dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
         autolog(">>>")
 
     def connection_failed():
@@ -152,7 +152,7 @@ async def async_setup_entry(hass, entry):
             )
 
         hass.data[DOMAIN][entry.entry_id]["online"] = False
-        hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_UPDATE_ENTITY)
+        dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
         autolog(">>>")
 
     hass.data.setdefault(DOMAIN, {})
@@ -210,14 +210,9 @@ async def async_setup_entry(hass, entry):
                 await hass.config_entries.async_forward_entry_setups(entry, ["light"])
                 hass.data[DOMAIN][entry.entry_id][ENTRY_IS_SETUP].add(config_entries_key)
             else:
-                hass.loop.call_soon_threadsafe(
-                    async_dispatcher_send,
-                    hass,
-                    ORGB_DISCOVERY_NEW.format("light"),
-                    entry.entry_id,
-                    device_list,
+                async_dispatcher_send(
+                    hass, ORGB_DISCOVERY_NEW.format("light"), entry.entry_id, device_list
                 )
-
 
         autolog(">>>")
 
@@ -268,17 +263,17 @@ async def async_setup_entry(hass, entry):
         for dev_id in list(hass.data[DOMAIN][entry.entry_id]["devices"]):
             # Clean up stale devices, or alert them that new info is available.
             if dev_id not in newlist_ids:
-                hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_DELETE_ENTITY, dev_id)
+                async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, dev_id)
                 
                 for led_id in hass.data[DOMAIN][entry.entry_id]["devices"][dev_id]:
-                    hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_DELETE_ENTITY, led_id)
+                    async_dispatcher_send(hass, SIGNAL_DELETE_ENTITY, led_id)
 
                 hass.data[DOMAIN][entry.entry_id]["devices"].pop(dev_id)
             else:
-                hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_UPDATE_ENTITY, dev_id)
+                async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, dev_id)
                 
                 for led_id in hass.data[DOMAIN][entry.entry_id]["devices"][dev_id]:
-                    hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_UPDATE_ENTITY, led_id)
+                    async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY, led_id)
 
         autolog(">>>")
 
@@ -293,7 +288,7 @@ async def async_setup_entry(hass, entry):
 
     async def async_force_update(call):
         """Force all devices to pull data."""
-        hass.loop.call_soon_threadsafe(async_dispatcher_send, hass, SIGNAL_UPDATE_ENTITY)
+        async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
 
     hass.services.async_register(DOMAIN, SERVICE_FORCE_UPDATE, async_force_update)
 
