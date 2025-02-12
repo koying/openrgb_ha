@@ -21,6 +21,7 @@ import homeassistant.util.color as color_util
 from .const import (
     CONF_ADD_LEDS,
     DOMAIN,
+    EFFECT_DIRECT,
     EFFECT_OFF,
     EFFECT_STATIC,
     ORGB_DISCOVERY_NEW,
@@ -311,9 +312,18 @@ class OpenRGBDevice(OpenRGBLight):
                 self._effect = self._prev_effect
 
             if self._effect == EFFECT_OFF:
-                # If the light got initialized with the Off effect, set it to
-                # Static is our best chance of success
-                self._effect = EFFECT_STATIC
+                # If the light got initialized with the Off effect, switching
+                # the effect to Static or Direct is the best we can do.
+                if EFFECT_STATIC in [mode.name for mode in self._light.modes]:
+                    self._effect = EFFECT_STATIC
+                elif EFFECT_DIRECT in [mode.name for mode in self._light.modes]:
+                    self._effect = EFFECT_DIRECT
+                else:
+                    _LOGGER.warning(
+                        "The light %s could not be turned on because it does not support 'Static' or 'Direct' effects.",
+                        self._name,
+                    )
+                    return
 
         self._set_effect()
 
@@ -324,8 +334,14 @@ class OpenRGBDevice(OpenRGBLight):
             self._prev_hs_value = self._hs_value
             self._prev_effect = self._effect
 
-            self._effect = EFFECT_OFF
-            self._set_effect()
+            # Use the Off effect if available
+            if EFFECT_OFF in [mode.name for mode in self._light.modes]:
+                self._effect = EFFECT_OFF
+                self._set_effect()
+            else:
+                # Otherwise, turn brightness to 0
+                self._brightness = 0.0
+                self._set_color()
 
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id}"
