@@ -21,6 +21,8 @@ import homeassistant.util.color as color_util
 from .const import (
     CONF_ADD_LEDS,
     DOMAIN,
+    EFFECT_OFF,
+    EFFECT_STATIC,
     ORGB_DISCOVERY_NEW,
     SIGNAL_DELETE_ENTITY,
     SIGNAL_UPDATE_ENTITY,
@@ -175,8 +177,8 @@ class OpenRGBLight(LightEntity):
 
         # Restore the state if the light just gets turned on
         if not kwargs:
+            self._brightness = 255.0 if self._prev_brightness == 0.0 else self._prev_brightness
             self._hs_value = self._prev_hs_value
-            self._brightness = self._prev_brightness
 
         self._device_turned_on(**kwargs)
 
@@ -188,18 +190,9 @@ class OpenRGBLight(LightEntity):
         # prevent subsequent turn_off calls from erasing the previous state
         if not self.is_on:
             return
-            
-        # preserve the state
-        self._prev_brightness = self._brightness
-        self._prev_hs_value = self._hs_value
-
-        # Instead of using the libraries off() method, setting the brightness
-        # preserves the color for when it gets turned on again.
-        self._brightness = 0.0
 
         self._device_turned_off(**kwargs)
 
-        self._set_color()
         self._state = False
 
     def _device_turned_on(self, **kwargs):
@@ -227,6 +220,10 @@ class OpenRGBLight(LightEntity):
         if self._assumed_state:
             if self._hs_value != (0.0, 0.0):
                 self._assumed_state = False
+
+        # If the brightness is 0, the light is off
+        if self._brightness == 0.0:
+            self._state = False
 
     def _set_color(self):
         """Set the devices color using the library."""
@@ -307,13 +304,28 @@ class OpenRGBDevice(OpenRGBLight):
     def _device_turned_on(self, **kwargs):
         if ATTR_EFFECT in kwargs:
             self._effect = kwargs.get(ATTR_EFFECT)
-            self._set_effect()
 
         if not kwargs:
-            self._effect = self._prev_effect
-    
+            if self._prev_effect != EFFECT_OFF:
+                # restore the state
+                self._effect = self._prev_effect
+
+            if self._effect == EFFECT_OFF:
+                # If the light got initialized with the Off effect, set it to
+                # Static is our best chance of success
+                self._effect = EFFECT_STATIC
+
+        self._set_effect()
+
     def _device_turned_off(self, **kwargs):
-        self._prev_effect = self._effect
+        if self._effect != EFFECT_OFF:
+            # preserve the state
+            self._prev_brightness = self._brightness
+            self._prev_hs_value = self._hs_value
+            self._prev_effect = self._effect
+
+            self._effect = EFFECT_OFF
+            self._set_effect()
 
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id}"
@@ -325,7 +337,11 @@ class OpenRGBDevice(OpenRGBLight):
         super().update()
 
         self._effect = self._light.modes[self._light.active_mode].name
-        self._effects = list(map(lambda x: x.name, self._light.modes))
+        self._effects = [mode.name for mode in self._light.modes if mode.name != EFFECT_OFF]
+
+        # If the effect is Off, the light is off
+        if self._effect == EFFECT_OFF:
+            self._state = False
 
     # Functions to modify the devices state
     def _set_effect(self):
@@ -393,6 +409,15 @@ class OpenRGBLed(OpenRGBLight):
     def supported_features(self):
         """Return the supported features for this device."""
         return LightEntityFeature(0)
+
+    def _device_turned_off(self, **kwargs):
+        if self._brightness != 0.0:
+            # preserve the state
+            self._prev_brightness = self._brightness
+            self._prev_hs_value = self._hs_value
+
+            self._brightness = 0.0
+            self._set_color()
 
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id} LED {self._led_id}"
