@@ -21,6 +21,9 @@ import homeassistant.util.color as color_util
 from .const import (
     CONF_ADD_LEDS,
     DOMAIN,
+    EFFECT_DIRECT,
+    EFFECT_OFF,
+    EFFECT_STATIC,
     ORGB_DISCOVERY_NEW,
     SIGNAL_DELETE_ENTITY,
     SIGNAL_UPDATE_ENTITY,
@@ -175,8 +178,8 @@ class OpenRGBLight(LightEntity):
 
         # Restore the state if the light just gets turned on
         if not kwargs:
+            self._brightness = 255.0 if self._prev_brightness == 0.0 else self._prev_brightness
             self._hs_value = self._prev_hs_value
-            self._brightness = self._prev_brightness
 
         self._device_turned_on(**kwargs)
 
@@ -188,18 +191,9 @@ class OpenRGBLight(LightEntity):
         # prevent subsequent turn_off calls from erasing the previous state
         if not self.is_on:
             return
-            
-        # preserve the state
-        self._prev_brightness = self._brightness
-        self._prev_hs_value = self._hs_value
-
-        # Instead of using the libraries off() method, setting the brightness
-        # preserves the color for when it gets turned on again.
-        self._brightness = 0.0
 
         self._device_turned_off(**kwargs)
 
-        self._set_color()
         self._state = False
 
     def _device_turned_on(self, **kwargs):
@@ -211,22 +205,21 @@ class OpenRGBLight(LightEntity):
     def _retrieve_current_name(self) -> str:
         raise NotImplementedError
 
-    def _retrieve_active_color(self) -> tuple[float, float]:
+    def _retrieve_current_hsv_color(self) -> tuple[float, float, float]:
         raise NotImplementedError
 
     def update(self):
         """Single function to update the devices state."""
         self._name = self._retrieve_current_name()
-        self._hs_value = self._retrieve_active_color()
+        hsv_color = self._retrieve_current_hsv_color()
+        self._hs_value = (hsv_color[0], hsv_color[1])
+        self._brightness = 255.0 * (hsv_color[2] / 100.0)
 
-        # For many devices, if OpenRGB hasn't set it, the initial state is
-        # unknown as they don't otherwise provide a way of reading it.
-        #
-        # So, we have to assume if we get a color of (0.0, 0.0) and we
-        # haven't changed the state ourselves, that this is an assumed state.
-        if self._assumed_state:
-            if self._hs_value != (0.0, 0.0):
-                self._assumed_state = False
+        # Infer the state from the brightness
+        self._state = self._brightness > 0.0
+
+        # After updating, we no longer need to assume the state
+        self._assumed_state = False
 
     def _set_color(self):
         """Set the devices color using the library."""
@@ -307,25 +300,59 @@ class OpenRGBDevice(OpenRGBLight):
     def _device_turned_on(self, **kwargs):
         if ATTR_EFFECT in kwargs:
             self._effect = kwargs.get(ATTR_EFFECT)
-            self._set_effect()
 
         if not kwargs:
-            self._effect = self._prev_effect
-    
+            if self._prev_effect != EFFECT_OFF:
+                # restore the state
+                self._effect = self._prev_effect
+
+            if self._effect == EFFECT_OFF:
+                # If the light got initialized with the Off effect, switching
+                # the effect to Static or Direct is the best we can do.
+                if EFFECT_STATIC in [mode.name for mode in self._light.modes]:
+                    self._effect = EFFECT_STATIC
+                elif EFFECT_DIRECT in [mode.name for mode in self._light.modes]:
+                    self._effect = EFFECT_DIRECT
+                else:
+                    _LOGGER.warning(
+                        "The light %s could not be turned on because it does not support 'Static' or 'Direct' effects.",
+                        self._name,
+                    )
+                    return
+
+        self._set_effect()
+
     def _device_turned_off(self, **kwargs):
-        self._prev_effect = self._effect
+        if self._effect != EFFECT_OFF:
+            # preserve the state
+            self._prev_brightness = self._brightness
+            self._prev_hs_value = self._hs_value
+            self._prev_effect = self._effect
+
+            # Use the Off effect if available
+            if EFFECT_OFF in [mode.name for mode in self._light.modes]:
+                self._effect = EFFECT_OFF
+                self._set_effect()
+            else:
+                # Otherwise, turn brightness to 0
+                self._brightness = 0.0
+                self._set_color()
 
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id}"
 
-    def _retrieve_active_color(self) -> tuple[float, float]:
-        return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[0]))
+    def _retrieve_current_hsv_color(self) -> tuple[float, float, float]:
+        return color_util.color_RGB_to_hsv(*orgb_tuple(self._light.colors[0]))
 
     def update(self):
         super().update()
 
         self._effect = self._light.modes[self._light.active_mode].name
-        self._effects = list(map(lambda x: x.name, self._light.modes))
+        self._effects = [mode.name for mode in self._light.modes if mode.name != EFFECT_OFF]
+
+        # If the effect is Off, the light is off
+        if self._effect == EFFECT_OFF:
+            self._state = False
 
     # Functions to modify the devices state
     def _set_effect(self):
@@ -394,12 +421,21 @@ class OpenRGBLed(OpenRGBLight):
         """Return the supported features for this device."""
         return LightEntityFeature(0)
 
+    def _device_turned_off(self, **kwargs):
+        if self._brightness != 0.0:
+            # preserve the state
+            self._prev_brightness = self._brightness
+            self._prev_hs_value = self._hs_value
+
+            self._brightness = 0.0
+            self._set_color()
+
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id} LED {self._led_id}"
         return f"{self._light.name} {self._light.device_id} {self._light.leds[self._led_id].name}"
 
-    def _retrieve_active_color(self) -> tuple[float, float]:
-        return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[self._led_id]))
+    def _retrieve_current_hsv_color(self) -> tuple[float, float, float]:
+        return color_util.color_RGB_to_hsv(*orgb_tuple(self._light.colors[self._led_id]))
 
     def _set_color(self):
         """Set the devices color using the library."""

@@ -29,3 +29,7 @@ DEFAULT_CLIENT_ID = "Home Assistant"
 DEFAULT_ADD_LEDS = False
 
 CONN_TIMEOUT = 5.0
+
+EFFECT_DIRECT = "Direct"
+EFFECT_OFF = "Off"
+EFFECT_STATIC = "Static"
