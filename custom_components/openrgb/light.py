@@ -215,18 +215,12 @@ class OpenRGBLight(LightEntity):
         self._hs_value = (hsv_color[0], hsv_color[1])
         self._brightness = 255.0 * (hsv_color[2] / 100.0)
 
-        # For many devices, if OpenRGB hasn't set it, the initial state is
-        # unknown as they don't otherwise provide a way of reading it.
-        #
-        # So, we have to assume if we get a color of (0.0, 0.0) and we
-        # haven't changed the state ourselves, that this is an assumed state.
-        if self._assumed_state:
-            if self._hs_value != (0.0, 0.0):
-                self._assumed_state = False
-
         # If the brightness is 0, the light is off
         if self._brightness == 0.0:
             self._state = False
+
+        # After updating, we no longer need to assume the state
+        self._assumed_state = False
 
     def _set_color(self):
         """Set the devices color using the library."""
