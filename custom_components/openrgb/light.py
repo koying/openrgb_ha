@@ -215,9 +215,8 @@ class OpenRGBLight(LightEntity):
         self._hs_value = (hsv_color[0], hsv_color[1])
         self._brightness = 255.0 * (hsv_color[2] / 100.0)
 
-        # If the brightness is 0, the light is off
-        if self._brightness == 0.0:
-            self._state = False
+        # Infer the state from the brightness
+        self._state = self._brightness > 0.0
 
         # After updating, we no longer need to assume the state
         self._assumed_state = False
