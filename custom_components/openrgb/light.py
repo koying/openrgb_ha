@@ -205,13 +205,15 @@ class OpenRGBLight(LightEntity):
     def _retrieve_current_name(self) -> str:
         raise NotImplementedError
 
-    def _retrieve_active_color(self) -> tuple[float, float]:
+    def _retrieve_current_hsv_color(self) -> tuple[float, float, float]:
         raise NotImplementedError
 
     def update(self):
         """Single function to update the devices state."""
         self._name = self._retrieve_current_name()
-        self._hs_value = self._retrieve_active_color()
+        hsv_color = self._retrieve_current_hsv_color()
+        self._hs_value = (hsv_color[0], hsv_color[1])
+        self._brightness = 255.0 * (hsv_color[2] / 100.0)
 
         # For many devices, if OpenRGB hasn't set it, the initial state is
         # unknown as they don't otherwise provide a way of reading it.
@@ -346,8 +348,8 @@ class OpenRGBDevice(OpenRGBLight):
     def _retrieve_current_name(self) -> str:
         return f"{self._light.name} {self._light.device_id}"
 
-    def _retrieve_active_color(self) -> tuple[float, float]:
-        return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[0]))
+    def _retrieve_current_hsv_color(self) -> tuple[float, float, float]:
+        return color_util.color_RGB_to_hsv(*orgb_tuple(self._light.colors[0]))
 
     def update(self):
         super().update()
@@ -439,8 +441,8 @@ class OpenRGBLed(OpenRGBLight):
         return f"{self._light.name} {self._light.device_id} LED {self._led_id}"
         return f"{self._light.name} {self._light.device_id} {self._light.leds[self._led_id].name}"
 
-    def _retrieve_active_color(self) -> tuple[float, float]:
-        return color_util.color_RGB_to_hs(*orgb_tuple(self._light.colors[self._led_id]))
+    def _retrieve_current_hsv_color(self) -> tuple[float, float, float]:
+        return color_util.color_RGB_to_hsv(*orgb_tuple(self._light.colors[self._led_id]))
 
     def _set_color(self):
         """Set the devices color using the library."""
