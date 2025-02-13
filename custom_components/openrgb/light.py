@@ -21,9 +21,14 @@ import homeassistant.util.color as color_util
 from .const import (
     CONF_ADD_LEDS,
     DOMAIN,
+    EFFECT_BREATHING,
+    EFFECT_CHASE_FADE,
     EFFECT_DIRECT,
+    EFFECT_FLASHING,
     EFFECT_OFF,
+    EFFECT_STACK,
     EFFECT_STATIC,
+    EFFECT_STROBE,
     ORGB_DISCOVERY_NEW,
     SIGNAL_DELETE_ENTITY,
     SIGNAL_UPDATE_ENTITY,
@@ -291,6 +296,15 @@ class OpenRGBDevice(OpenRGBLight):
     def effect(self):
         """Return the current effect."""
         return self._effect
+
+    @property
+    def color_mode(self):
+        """Return the color mode of the light."""
+        # These are the known effects that allow changing the color
+        if self._effect in [EFFECT_STATIC, EFFECT_DIRECT, EFFECT_BREATHING, EFFECT_CHASE_FADE, EFFECT_FLASHING, EFFECT_STACK, EFFECT_STROBE]:
+            return ColorMode.HS
+        # Otherwise, probably the color is not changeable
+        return ColorMode.ONOFF
 
     @property
     def supported_features(self):
